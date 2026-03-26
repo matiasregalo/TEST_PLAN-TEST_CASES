@@ -192,3 +192,33 @@ Se ejecutarán los escenarios definidos para cada historia de usuario de acuerdo
 | **Funcional — API REST S2S** | HU 8, HU 9 | Verificar que los endpoints del Motor de Descuentos respondan correctamente en escenarios positivos y negativos, cumpliendo los criterios de aceptación definidos. | Karate |
 | **Funcional — Dashboard UI** | HU 3, HU 7 | Verificar que las funcionalidades del Dashboard de configuración se implementen correctamente y cumplan los criterios de aceptación establecidos. | SerenityBDD + Cucumber |
 | **Rendimiento — Motor de Descuentos** | HU 9 | Verificar que el Motor de Descuentos soporte la carga esperada de peticiones simultáneas dentro de los umbrales de tiempo de respuesta aceptables para el negocio. | k6 |
+
+---
+
+## 5. Criterios de Entrada y Salida
+
+### 5.1 Criterios de Entrada
+
+| # | Criterio |
+|---|---|
+| 1 | Código fuente disponible en el repositorio con PR aprobado |
+| 2 | Ambiente de pruebas desplegado y estable |
+| 3 | Base de datos de pruebas configurada y accesible |
+| 4 | Endpoints de la API documentados y disponibles |
+| 5 | Pruebas unitarias ejecutadas por DEV con cobertura > 80% |
+| 6 | Historias de usuario y criterios de aceptación revisados y aprobados |
+| 7 | Datos de prueba preparados |
+| 8 | Herramientas de prueba configuradas (SerenityBDD, Cucumber, Karate, k6) |
+
+### 5.2 Criterios de Salida
+
+| # | Criterio |
+|---|---|
+| 1 | Todos los criterios de aceptación validados (100% ejecutados) |
+| 2 | Tasa de aprobación de casos de prueba ≥ 95% |
+| 3 | Sin defectos críticos o bloqueantes abiertos |
+| 4 | Defectos de severidad media resueltos o con plan de mitigación aprobado |
+| 5 | Reporte de SerenityBDD generado y revisado (aplica a HU 3 y HU 7) |
+| 6 | Reporte de Karate generado y revisado (aplica a HU 8 y HU 9) |
+| 7 | Pruebas de rendimiento k6 ejecutadas y dentro de umbrales aceptables (aplica a HU 9) |
+
