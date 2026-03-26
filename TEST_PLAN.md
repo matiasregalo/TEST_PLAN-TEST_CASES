@@ -270,3 +270,99 @@ Entorno dedicado de QA, aislado de producción, con datos controlados y sin impa
 | **IntelliJ IDEA** | 2024.x | IDE de desarrollo | Entorno de desarrollo integrado utilizado para escribir, depurar y mantener los scripts de prueba de Karate y SerenityBDD+Cucumber. |
 
 ---
+
+## 8. Roles y Responsabilidades
+
+| Rol | Persona | Responsabilidad general |
+|---|---|---|
+| **QA** | Matías Regaló | Diseño y ejecución de casos de prueba, automatización de suites, reporte de defectos y verificación de criterios de aceptación |
+| **DEV** | Agustín Mites | Implementación de backend y frontend, lógica del motor de descuentos y pruebas unitarias |
+| **DEV** | Luis Ospino | Implementación de backend y frontend, integración de servicios y pruebas unitarias |
+
+### HU 3 — Gestionar y validar las API Keys
+
+| Tarea | Responsable | Descripción |
+|---|---|---|
+| TDEV 1–5 | Agustín Mites / Luis Ospino | Generación criptográfica de API Keys, hashing, Guard S2S, endpoints de listado/revocación/rotación y pruebas unitarias del middleware |
+| TDEV 6–9 | Agustín Mites / Luis Ospino | Panel de gestión de credenciales, mostrar llave solo al crear, enmascaramiento en tablas y diálogos de confirmación |
+| TQA 1–2 | Matías Regaló | Revisión de criterios de rotación sin interrupción del servicio; diseño de pruebas de integración con llaves válidas y nulas |
+| TQA 3–6 | Matías Regaló | Verificar rechazo con API Key revocada o incorrecta; validar que la llave no se exponga en logs ni respuestas; comprobar enmascaramiento en UI; prueba de carga básica sobre la validación de llave |
+
+### HU 7 — Definir el tope máximo y la prioridad de descuentos
+
+| Tarea | Responsable | Descripción |
+|---|---|---|
+| TDEV 1–4 | Agustín Mites / Luis Ospino | Modelo `ConfigDescuentos`, endpoint de registro/actualización, ajuste del motor para aplicar prioridad y tope, pruebas unitarias e integración |
+| TDEV 5–7 | Agustín Mites / Luis Ospino | Pantalla de configuración con ordenamiento de descuentos, manejo de errores (tope inválido, prioridad ambigua) y pruebas unitarias de UI |
+| TQA 1 | Matías Regaló | Casos de prueba para configuración válida, tope inválido, prioridad duplicada y aplicación del tope en acumulación; validación API y funcional del motor con múltiples descuentos |
+
+### HU 8 — Clasificar al cliente según el payload recibido
+
+| Tarea | Responsable | Descripción |
+|---|---|---|
+| TDEV 1–5 | Agustín Mites / Luis Ospino | Contrato `PayloadCliente`, validaciones de atributos obligatorios y dominios, endpoint/módulo del motor consumiendo matriz vigente, pruebas unitarias de consistencia y de integración |
+| TDEV 6 | Agustín Mites / Luis Ospino | (Opcional) herramienta interna para probar payload y visualizar resultado |
+| TQA 1–2 | Matías Regaló | Diseño de payloads (completo válido, atributos faltantes, valores fuera de dominio, bordes de rango); validación de rechazos con mensajes claros y verificación de determinismo re-ejecutando el mismo payload |
+
+### HU 9 — Enviar el carrito y recibir el precio final
+
+| Tarea | Responsable | Descripción |
+|---|---|---|
+| TDEV 1–5 | Agustín Mites / Luis Ospino | Validación del carrito (`DTOs`), autenticación S2S, aplicación de reglas con prioridad y tope, exposición de `POST /carritos/calcular`, pruebas unitarias e integración |
+| TDEV 6–8 | Agustín Mites / Luis Ospino | Consumo del endpoint en checkout, renderizado de subtotal/descuentos/precio final, manejo de estados de carga, error y sin descuentos, y pruebas unitarias de UI |
+| TQA 1–3 | Matías Regaló | Diseño de matriz para prioridad, tope y carrito inválido; validación del control de acceso y contrato de respuesta; verificación del orden de descuentos, límite por tope y flujo E2E |
+
+---
+
+## 9. Cronograma y Estimación
+
+| Sprint | Actividad | Duración estimada |
+|---|---|---|
+| Micro Sprint  | Diseño del plan de pruebas | 1 días |
+| Micro Sprint  | Diseño de casos de prueba (HU 3, HU 7, HU 8, HU 9) | 1 días |
+| Sprint 1 | Automatización HU 3 + HU 7 (SerenityBDD + Cucumber — Dashboard UI) | 1 día |
+| Sprint 1 | Automatización HU 8 (Karate — Motor API clasificación de cliente) | 0.5 días |
+| Sprint 1 | Automatización HU 9 (Karate — Motor API cálculo de carrito) | 1 día |
+| Sprint 1 | Pruebas de rendimiento k6 (HU 9) | 0.5 días |
+| Sprint 1 | Regresión + reporte final | 0.5 días |
+| **TOTAL** | | **7.5 días** |
+
+---
+
+## 10. Entregables de Prueba
+
+| # | Entregable | Formato | Descripción |
+|---|---|---|---|
+| 1 | Plan de pruebas | `TEST_PLAN.md` | Documento que estructura el plan de pruebas con los siguientes elementos: Identificación del Plan (nombre, sistema, versión, fecha y equipo), Contexto (sistema bajo prueba y problema de negocio), Alcance (HU validadas y excluidas del ciclo), Estrategia (SerenityBDD + Cucumber para funcional, Karate para API y k6 para rendimiento), Criterios de Entrada y Salida, Entorno de Pruebas, Herramientas y su propósito, Roles y Responsabilidades (QA vs DEV), Cronograma y Estimación (esfuerzo en relación con Story Points), Entregables de Prueba y Riesgos y Contingencias |
+| 2 | Casos de prueba | `TEST_CASES.md` | Matriz de casos de prueba organizada por Historia de Usuario. Por cada caso incluye: HU asociada, ID del caso (ej. TC-001), escenario en lenguaje Gherkin (Dado / Cuando / Entonces), precondiciones, datos de entrada, pasos de ejecución, resultado esperado, resultado obtenido y estado (Pasó / Falló / Sin ejecutar — campos en "Sin ejecutar" para este entregable documental), prioridad (Crítico / Alto / Medio / Bajo) y registro de cada caso como sub-tarea dentro de su HU en GitHub Projects |
+| 3 | Escenarios Gherkin (BDD) | Archivos `.feature` | Escenarios Cucumber vinculados a criterios de aceptación del Dashboard (HU 3, HU 7) |
+| 4 | Scripts de prueba API (Karate) | Archivos `.feature` | Scripts Karate para validación de endpoints REST del Motor de Descuentos (HU 8, HU 9) |
+| 5 | Scripts de rendimiento | Archivos `.js` (k6) | Scripts de carga y estrés para el endpoint de cálculo de carrito (HU 9) |
+| 6 | Reporte SerenityBDD | HTML generado | Reporte detallado de ejecución de pruebas funcionales del Dashboard con evidencias paso a paso |
+| 7 | Reporte k6 | HTML / JSON | Reporte de métricas de rendimiento (latencia p95, throughput, tasa de error) |
+| 8 | Registro de defectos | GitHub Issues | Defectos encontrados con severidad, pasos de reproducción y evidencia adjunta |
+| 9 | Informe final de pruebas | Markdown / PDF | Resumen ejecutivo del ciclo: cobertura, métricas, defectos y recomendaciones |
+
+---
+
+## 11. Riesgos y Contingencias
+
+### 11.1 Riesgos de proyecto
+
+| Descripción                                              | Probabilidad | Impacto | Riesgo | Mitigación principal                                                                                                                       |
+| -------------------------------------------------------- | ------------ | ------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Retrasos en la entrega del MVP                           | Alto            | Alto       | Alto      | Comunicar avances y antes de la fecha limite notificar a los clientes que se extenderá la fecha de entrega                                 |
+| Cambios frecuentes en el alcance del MVP                 | Alto            | Alto       | Alto      | Evaluar impacto en tiempo/costo y aprobar solo cambios críticos                                                                            |
+| Definición ambigua de criterios de aceptación            | Medio            | Alto        | Alto      | Definir criterios de aceptación claros y validar con QA antes de iniciar el sprint.                                                        |
+| Problemas de comunicación entre QA y DEV                 | Bajo            | Medio       | Bajo      | Realizar reuniones cortas diarias para asignar responsables y fechas de solución.                                                          |
+| Bajo uso inicial del MVP por parte de comercios clientes | Medio            | Alto       | Alto      | Acompañar a los comercios en el uso del sistema durante las primeras 2 semanas y revisar cada semana el nivel de uso para aplicar mejoras. |
+
+### 11.2 Riesgos de producto
+
+| Descripción                                                                            | Probabilidad | Impacto | Riesgo | Mitigación principal                                                                                                      |
+| -------------------------------------------------------------------------------------- | ------------ | ------- | ------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Cálculo incorrecto del descuento total por orden de aplicación o acumulación de reglas | Alto            | Alto       | Alto      | Definir reglas de cálculo claras y hacer pruebas completas con casos reales antes de publicar.                            |
+| Validaciones incompletas o inconsistentes de datos de entrada                          | Alto            | Alto       | Alto      | Validar datos, bloqueando valores vacíos, negativos o fuera de rango.                                                     |
+| Cálculo e inyección de descuentos en el checkout                                       | Medio            | Alto       | Alto      | Probar el sistema con alta concurrencia antes y optimizar consultas o procesos lentos detectados.                         |
+| Interfaz de configuración poco clara para usuarios del comercio                        | Medio            | Alto       | Alto      | Simplificar la pantalla principal, usar etiquetas claras y validar la usabilidad con pruebas rápidas con usuarios reales. |
+| Cambios de reglas sin trazabilidad                                                     | Medio            | Medio       | Medio      | Registrar quién, cuándo y qué regla se modificó, y mostrar un historial simple de cambios dentro del módulo.              |
