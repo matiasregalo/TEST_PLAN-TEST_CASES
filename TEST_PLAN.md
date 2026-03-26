@@ -189,9 +189,11 @@ Se ejecutarán los escenarios definidos para cada historia de usuario de acuerdo
 
 | Tipo de Prueba | HU Cubiertas | Objetivo | Herramienta |
 |---|---|---|---|
+| **Smoke — API REST S2S** | HU 8, HU 9 | Verificar conectividad básica y estructura de respuesta de los endpoints antes de ejecutar la suite automatizada. | Postman |
 | **Funcional — API REST S2S** | HU 8, HU 9 | Verificar que los endpoints del Motor de Descuentos respondan correctamente en escenarios positivos y negativos, cumpliendo los criterios de aceptación definidos. | Karate |
 | **Funcional — Dashboard UI** | HU 3, HU 7 | Verificar que las funcionalidades del Dashboard de configuración se implementen correctamente y cumplan los criterios de aceptación establecidos. | SerenityBDD + Cucumber |
 | **Rendimiento — Motor de Descuentos** | HU 9 | Verificar que el Motor de Descuentos soporte la carga esperada de peticiones simultáneas dentro de los umbrales de tiempo de respuesta aceptables para el negocio. | k6 |
+| **Regresión automatizada — CI/CD** | HU 3, HU 7, HU 8, HU 9 | Ejecutar automáticamente las suites de Karate y SerenityBDD+Cucumber ante cada PR o merge a la rama QA, garantizando que no se introduzcan regresiones. | GitHub Actions |
 
 ---
 
@@ -208,7 +210,7 @@ Se ejecutarán los escenarios definidos para cada historia de usuario de acuerdo
 | 5 | Pruebas unitarias ejecutadas por DEV con cobertura > 80% |
 | 6 | Historias de usuario y criterios de aceptación revisados y aprobados |
 | 7 | Datos de prueba preparados |
-| 8 | Herramientas de prueba configuradas (SerenityBDD, Cucumber, Karate, k6) |
+| 8 | Herramientas de prueba configuradas (Karate, SerenityBDD, Cucumber, k6, Postman, Maven, Docker, GitHub Actions, GitHub Issues, IntelliJ IDEA) |
 
 ### 5.2 Criterios de Salida
 
@@ -222,3 +224,49 @@ Se ejecutarán los escenarios definidos para cada historia de usuario de acuerdo
 | 6 | Reporte de Karate generado y revisado (aplica a HU 8 y HU 9) |
 | 7 | Pruebas de rendimiento k6 ejecutadas y dentro de umbrales aceptables (aplica a HU 9) |
 
+## 6. Entorno de Pruebas
+
+Entorno dedicado de QA, aislado de producción, con datos controlados y sin impacto en clientes reales.
+
+
+| Componente | Versión | Acceso / Uso |
+|---|---|---|
+| Motor de Descuentos (API REST S2S) | Docker 26.x | `http://localhost:8080` · HU 8, HU 9 · auth header `x-api-key`; sin autenticación de usuario |
+| Dashboard de configuración (UI) | Docker 26.x | `http://localhost:3000` · HU 3, HU 7 · cuenta Super Admin activa; sin MFA |
+| Base de datos | Docker 26.x | Solo red interna `loyalty-qa-network` · inicializada con datos de prueba |
+| Windows 11 / Ubuntu (runner CI) | — | Local: ejecución manual y automatizada · CI: runner `ubuntu-latest` en GitHub Actions |
+| JDK | 17 LTS (OpenJDK) | Runtime de Maven, Karate y SerenityBDD |
+| Maven | 3.9.x | Ejecución de suites Karate y SerenityBDD+Cucumber |
+| k6 | 0.50.x | Pruebas de rendimiento (HU 9) |
+| Postman | Estable actual | Smoke tests manuales (HU 8, HU 9) |
+| Google Chrome | Estable actual | Pruebas UI del Dashboard (HU 3, HU 7) |
+| GitHub Actions | — | Trigger: PR o merge a rama `qa` · publica reportes Karate y SerenityBDD como artefactos |
+
+### 6.2 Datos de prueba
+
+- Ecommerce de prueba con ID fijo
+- Dos API Keys: una activa y una revocada
+- Reglas de temporada, fidelidad y tipo de producto que activan todos los escenarios
+- Tope máximo positivo y prioridades únicas configuradas
+- Cuenta Super Admin con credenciales conocidas por el equipo QA
+
+> **Prerequisito de arranque:** Se verificará `GET http://localhost:8080/health → HTTP 200` en el Motor de Descuentos y que `http://localhost:3000` es accesible desde el navegador. Si alguno falla, la ejecución queda bloqueada.
+
+---
+
+## 7. Herramientas
+
+| Herramienta | Versión | Categoría | Propósito específico |
+|---|---|---|---|
+| **Karate** | 1.4.x | Automatización API | Framework de pruebas de API REST. Automatiza los escenarios funcionales del Motor de Descuentos (HU 8, HU 9): envío de payloads, validación de respuestas HTTP, verificación de estructura JSON y flujos negativos. |
+| **SerenityBDD** | 4.x | Automatización UI / Reporte | Framework de reporte y orquestación BDD. Integrado con Cucumber, genera reportes narrativos de los escenarios del Dashboard de configuración (HU 3, HU 7), documentando la evidencia de ejecución paso a paso. |
+| **Cucumber** | 7.x | Especificación BDD | Motor de especificación ejecutable en Gherkin. Define los escenarios de aceptación del Dashboard (HU 3, HU 7) en lenguaje natural, conectando criterios de aceptación con la automatización de SerenityBDD. |
+| **k6** | 0.50.x | Rendimiento | Herramienta de pruebas de rendimiento. Ejecuta escenarios de carga sobre el Motor de Descuentos (HU 9) para verificar el comportamiento bajo volumen de peticiones simultáneas y validar que los tiempos de respuesta se mantienen dentro de los umbrales aceptables. |
+| **Postman** | Actual | Exploración manual / Smoke | Cliente HTTP para pruebas exploratorias y smoke tests manuales sobre los endpoints del Motor de Descuentos. Permite inspeccionar respuestas, manipular headers y validar contratos de la API antes de incorporar escenarios a la suite automatizada. |
+| **Maven** | 3.9.x | Build y ejecución | Herramienta de construcción y gestión de dependencias. Orquesta la compilación y ejecución de las suites de Karate y SerenityBDD+Cucumber desde línea de comandos o pipeline CI/CD. |
+| **Docker** | 26.x | Entorno / Infraestructura QA | Conteneriza los servicios del entorno de QA (Motor de Descuentos, base de datos) garantizando reproducibilidad y aislamiento entre ejecuciones. Permite levantar y destruir el entorno de forma consistente. |
+| **GitHub Actions** | — | CI/CD | Pipeline de integración continua que dispara automáticamente la ejecución de las suites de pruebas ante cada PR o merge a la rama de QA, publicando los reportes generados como artefactos del workflow. |
+| **GitHub Issues** | — | Gestión de defectos | Registro y seguimiento de defectos detectados durante la ejecución. Cada issue captura: pasos para reproducir, resultado esperado vs. obtenido, severidad y evidencia adjunta (logs, capturas). |
+| **IntelliJ IDEA** | 2024.x | IDE de desarrollo | Entorno de desarrollo integrado utilizado para escribir, depurar y mantener los scripts de prueba de Karate y SerenityBDD+Cucumber. |
+
+---
