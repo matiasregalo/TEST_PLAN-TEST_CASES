@@ -72,7 +72,7 @@ El alcance de las pruebas para este micro-sprint incluye las historias de usuari
 
 **Scenario: Rechazo por tope máximo inválido**
 - **Given** existen límites de negocio para proteger la rentabilidad
-- **When** se intenta registrar un tope máximo menor o igual a cero
+- **When** se intenta registrar un tope máximo fuera del rango válido (menor o igual a cero, o mayor a 100%)
 - **Then** la configuración es rechazada
 - **And** se mantiene la última configuración válida
 
@@ -133,7 +133,7 @@ El alcance de las pruebas para este micro-sprint incluye las historias de usuari
 - **And** el carrito contiene ítems válidos
 - **And** existen reglas de descuento vigentes aplicables
 - **And** existe una configuración vigente de topes y prioridad
-- **And** y el carrito califica para múltiples descuentos
+- **And** el carrito califica para múltiples descuentos
 - **When** el ecommerce solicita el cálculo del carrito
 - **Then** el servicio responde el precio final del carrito
 - **And** el total incluye los descuentos aplicados según reglas vigentes y prioridades configuradas
@@ -156,6 +156,12 @@ El alcance de las pruebas para este micro-sprint incluye las historias de usuari
 - **Then** la solicitud es rechazada
 - **And** no se retorna precio final hasta contar con un carrito válido
 
+**Scenario: Rechazo por solicitud no autorizada**
+- **Given** el servicio requiere autenticación mediante API Key válida
+- **When** el ecommerce realiza la solicitud sin API Key o con una API Key inválida o revocada
+- **Then** la solicitud es rechazada
+- **And** no se retorna precio final
+
 ---
 
 ### Fuera del Alcance
@@ -174,7 +180,7 @@ Las siguientes historias de usuario **no serán validadas** en este ciclo, queda
 
 Adicionalmente, quedan explícitamente fuera del alcance de este ciclo:
 
-- Pruebas de la interfaz del Dashboard de configuración (UI end-to-end)
+- Pruebas de las pantallas del Dashboard no cubiertas por HU 3 y HU 7 (configuración de temporadas, tipos de producto, rangos de fidelidad y auditoría)
 - Pruebas de administración de usuarios y roles (HU 1 y HU 2)
 - Cualquier otra validación o funcionalidad no incluida explícitamente en la
 estrategia
@@ -222,12 +228,11 @@ Se ejecutarán los escenarios definidos para cada historia de usuario de acuerdo
 | 4 | Defectos de severidad media resueltos o con plan de mitigación aprobado |
 | 5 | Reporte de SerenityBDD generado y revisado (aplica a HU 3 y HU 7) |
 | 6 | Reporte de Karate generado y revisado (aplica a HU 8 y HU 9) |
-| 7 | Pruebas de rendimiento k6 ejecutadas y dentro de umbrales aceptables (aplica a HU 9) |
+| 7 | Pruebas de rendimiento k6 ejecutadas y dentro de umbrales aceptables: p95 ≤ 500 ms y tasa de error < 1% bajo carga concurrente (aplica a HU 9) |
 
 ## 6. Entorno de Pruebas
 
 Entorno dedicado de QA, aislado de producción, con datos controlados y sin impacto en clientes reales.
-
 
 | Componente | Versión | Acceso / Uso |
 |---|---|---|
@@ -242,7 +247,7 @@ Entorno dedicado de QA, aislado de producción, con datos controlados y sin impa
 | Google Chrome | Estable actual | Pruebas UI del Dashboard (HU 3, HU 7) |
 | GitHub Actions | — | Trigger: PR o merge a rama `qa` · publica reportes Karate y SerenityBDD como artefactos |
 
-### 6.2 Datos de prueba
+### Datos de prueba
 
 - Ecommerce de prueba con ID fijo
 - Dos API Keys: una activa y una revocada
@@ -273,44 +278,39 @@ Entorno dedicado de QA, aislado de producción, con datos controlados y sin impa
 
 ## 8. Roles y Responsabilidades
 
-| Rol | Persona | Responsabilidad general |
+| Rol | Persona | Responsabilidades frente a las pruebas |
 |---|---|---|
-| **QA** | Matías Regaló | Diseño y ejecución de casos de prueba, automatización de suites, reporte de defectos y verificación de criterios de aceptación |
-| **DEV** | Agustín Mites | Implementación de backend y frontend, lógica del motor de descuentos y pruebas unitarias |
-| **DEV** | Luis Ospino | Implementación de backend y frontend, integración de servicios y pruebas unitarias |
+| **QA** | Matías Regaló | Diseñar los casos de prueba y escenarios Gherkin; automatizar las suites de SerenityBDD+Cucumber (HU 3, HU 7), Karate (HU 8, HU 9) y k6 (HU 9); ejecutar las pruebas en el entorno QA; reportar defectos en GitHub Issues con evidencia; verificar la corrección de defectos; publicar los reportes de SerenityBDD, Karate y k6 como entregables del ciclo |
+| **DEV** | Agustín Mites | Escribir y mantener pruebas unitarias con cobertura ≥ 80% para el backend y frontend; garantizar que el entorno Docker QA esté disponible y estable antes de cada ciclo de pruebas; corregir los defectos reportados por QA y notificar cuando estén listos para re-validación |
+| **DEV** | Luis Ospino | Escribir y mantener pruebas unitarias con cobertura ≥ 80% para el backend y frontend; garantizar la disponibilidad y correcto funcionamiento de los endpoints bajo prueba; corregir los defectos reportados por QA y notificar cuando estén listos para re-validación |
 
 ### HU 3 — Gestionar y validar las API Keys
 
-| Tarea | Responsable | Descripción |
+| Rol | Responsable | Actividades de prueba |
 |---|---|---|
-| TDEV 1–5 | Agustín Mites / Luis Ospino | Generación criptográfica de API Keys, hashing, Guard S2S, endpoints de listado/revocación/rotación y pruebas unitarias del middleware |
-| TDEV 6–9 | Agustín Mites / Luis Ospino | Panel de gestión de credenciales, mostrar llave solo al crear, enmascaramiento en tablas y diálogos de confirmación |
-| TQA 1–2 | Matías Regaló | Revisión de criterios de rotación sin interrupción del servicio; diseño de pruebas de integración con llaves válidas y nulas |
-| TQA 3–6 | Matías Regaló | Verificar rechazo con API Key revocada o incorrecta; validar que la llave no se exponga en logs ni respuestas; comprobar enmascaramiento en UI; prueba de carga básica sobre la validación de llave |
+| **DEV** | Agustín Mites / Luis Ospino | Escribir pruebas unitarias del middleware de validación de API Keys (hashing, Guard S2S, revocación y rotación); asegurar cobertura de ramas críticas de seguridad |
+| **QA** | Matías Regaló | Automatizar con SerenityBDD+Cucumber los escenarios de creación y consulta de claves; verificar rechazo con API Key revocada o incorrecta; validar que la llave no se exponga en logs ni respuestas comunes; comprobar el enmascaramiento en la UI del Dashboard |
 
 ### HU 7 — Definir el tope máximo y la prioridad de descuentos
 
-| Tarea | Responsable | Descripción |
+| Rol | Responsable | Actividades de prueba |
 |---|---|---|
-| TDEV 1–4 | Agustín Mites / Luis Ospino | Modelo `ConfigDescuentos`, endpoint de registro/actualización, ajuste del motor para aplicar prioridad y tope, pruebas unitarias e integración |
-| TDEV 5–7 | Agustín Mites / Luis Ospino | Pantalla de configuración con ordenamiento de descuentos, manejo de errores (tope inválido, prioridad ambigua) y pruebas unitarias de UI |
-| TQA 1 | Matías Regaló | Casos de prueba para configuración válida, tope inválido, prioridad duplicada y aplicación del tope en acumulación; validación API y funcional del motor con múltiples descuentos |
+| **DEV** | Agustín Mites / Luis Ospino | Escribir pruebas unitarias del modelo `ConfigDescuentos` y la lógica del motor que aplica prioridad y tope; cubrir casos de tope inválido y prioridad duplicada a nivel de unidad |
+| **QA** | Matías Regaló | Automatizar con SerenityBDD+Cucumber los escenarios de configuración válida, tope inválido, prioridad ambigua y aplicación del tope ante acumulación de descuentos; validar el comportamiento del motor mediante la API con múltiples descuentos concurrentes |
 
 ### HU 8 — Clasificar al cliente según el payload recibido
 
-| Tarea | Responsable | Descripción |
+| Rol | Responsable | Actividades de prueba |
 |---|---|---|
-| TDEV 1–5 | Agustín Mites / Luis Ospino | Contrato `PayloadCliente`, validaciones de atributos obligatorios y dominios, endpoint/módulo del motor consumiendo matriz vigente, pruebas unitarias de consistencia y de integración |
-| TDEV 6 | Agustín Mites / Luis Ospino | (Opcional) herramienta interna para probar payload y visualizar resultado |
-| TQA 1–2 | Matías Regaló | Diseño de payloads (completo válido, atributos faltantes, valores fuera de dominio, bordes de rango); validación de rechazos con mensajes claros y verificación de determinismo re-ejecutando el mismo payload |
+| **DEV** | Agustín Mites / Luis Ospino | Escribir pruebas unitarias de las validaciones del contrato `PayloadCliente` (atributos obligatorios, dominios, determinismo); cubrir rutas de rechazo y clasificación exitosa a nivel de unidad e integración interna |
+| **QA** | Matías Regaló | Automatizar con Karate los escenarios de clasificación exitosa, payload incompleto, valores fuera de dominio y consistencia de resultado; validar que los mensajes de error sean claros y que el mismo payload produzca siempre el mismo nivel de fidelidad |
 
 ### HU 9 — Enviar el carrito y recibir el precio final
 
-| Tarea | Responsable | Descripción |
+| Rol | Responsable | Actividades de prueba |
 |---|---|---|
-| TDEV 1–5 | Agustín Mites / Luis Ospino | Validación del carrito (`DTOs`), autenticación S2S, aplicación de reglas con prioridad y tope, exposición de `POST /carritos/calcular`, pruebas unitarias e integración |
-| TDEV 6–8 | Agustín Mites / Luis Ospino | Consumo del endpoint en checkout, renderizado de subtotal/descuentos/precio final, manejo de estados de carga, error y sin descuentos, y pruebas unitarias de UI |
-| TQA 1–3 | Matías Regaló | Diseño de matriz para prioridad, tope y carrito inválido; validación del control de acceso y contrato de respuesta; verificación del orden de descuentos, límite por tope y flujo E2E |
+| **DEV** | Agustín Mites / Luis Ospino | Escribir pruebas unitarias e integración de `POST /carritos/calcular` (DTOs, autenticación S2S, aplicación de prioridad y tope); garantizar que los contratos de respuesta estén documentados antes del inicio de la automatización QA |
+| **QA** | Matías Regaló | Automatizar con Karate los escenarios de cálculo exitoso, carrito sin descuentos y carrito inválido; verificar el orden de aplicación de descuentos, el límite por tope y el control de acceso S2S; ejecutar con k6 las pruebas de carga sobre el endpoint y validar que los tiempos de respuesta se mantienen dentro de los umbrales aceptables |
 
 ---
 
@@ -325,7 +325,7 @@ Entorno dedicado de QA, aislado de producción, con datos controlados y sin impa
 | Sprint 1 | Automatización HU 9 (Karate — Motor API cálculo de carrito) | 1 día |
 | Sprint 1 | Pruebas de rendimiento k6 (HU 9) | 0.5 días |
 | Sprint 1 | Regresión + reporte final | 0.5 días |
-| **TOTAL** | | **7.5 días** |
+| **TOTAL** | | **5.5 días** |
 
 ---
 
@@ -335,13 +335,14 @@ Entorno dedicado de QA, aislado de producción, con datos controlados y sin impa
 |---|---|---|---|
 | 1 | Plan de pruebas | `TEST_PLAN.md` | Documento que estructura el plan de pruebas con los siguientes elementos: Identificación del Plan (nombre, sistema, versión, fecha y equipo), Contexto (sistema bajo prueba y problema de negocio), Alcance (HU validadas y excluidas del ciclo), Estrategia (SerenityBDD + Cucumber para funcional, Karate para API y k6 para rendimiento), Criterios de Entrada y Salida, Entorno de Pruebas, Herramientas y su propósito, Roles y Responsabilidades (QA vs DEV), Cronograma y Estimación (esfuerzo en relación con Story Points), Entregables de Prueba y Riesgos y Contingencias |
 | 2 | Casos de prueba | `TEST_CASES.md` | Matriz de casos de prueba organizada por Historia de Usuario. Por cada caso incluye: HU asociada, ID del caso (ej. TC-001), escenario en lenguaje Gherkin (Dado / Cuando / Entonces), precondiciones, datos de entrada, pasos de ejecución, resultado esperado, resultado obtenido y estado (Pasó / Falló / Sin ejecutar — campos en "Sin ejecutar" para este entregable documental), prioridad (Crítico / Alto / Medio / Bajo) y registro de cada caso como sub-tarea dentro de su HU en GitHub Projects |
-| 3 | Escenarios Gherkin (BDD) | Archivos `.feature` | Escenarios Cucumber vinculados a criterios de aceptación del Dashboard (HU 3, HU 7) |
-| 4 | Scripts de prueba API (Karate) | Archivos `.feature` | Scripts Karate para validación de endpoints REST del Motor de Descuentos (HU 8, HU 9) |
-| 5 | Scripts de rendimiento | Archivos `.js` (k6) | Scripts de carga y estrés para el endpoint de cálculo de carrito (HU 9) |
+| 3 | Repositorio serenity bdd con gherkin | Archivos `.feature` | Escenarios Cucumber vinculados a criterios de aceptación del Dashboard (HU 3, HU 7) |
+| 4 | Repositorio de karate | Archivos `.feature` | Scripts Karate para validación de endpoints REST del Motor de Descuentos (HU 8, HU 9) |
+| 5 | Repositorio de k6 | Archivos `.js` (k6) | Scripts de carga y estrés para el endpoint de cálculo de carrito (HU 9) |
 | 6 | Reporte SerenityBDD | HTML generado | Reporte detallado de ejecución de pruebas funcionales del Dashboard con evidencias paso a paso |
-| 7 | Reporte k6 | HTML / JSON | Reporte de métricas de rendimiento (latencia p95, throughput, tasa de error) |
-| 8 | Registro de defectos | GitHub Issues | Defectos encontrados con severidad, pasos de reproducción y evidencia adjunta |
-| 9 | Informe final de pruebas | Markdown / PDF | Resumen ejecutivo del ciclo: cobertura, métricas, defectos y recomendaciones |
+| 7 | Reporte de Karate | HTML generado | Reporte detallado de ejecución de pruebas de API REST del Motor de Descuentos (HU 8, HU 9) |
+| 8 | Reporte k6 | HTML / JSON | Reporte de métricas de rendimiento (latencia p95, throughput, tasa de error) |
+| 9 | Registro de defectos | GitHub Issues | Defectos encontrados con severidad, pasos de reproducción y evidencia adjunta |
+| 10 | Informe final de pruebas | Markdown / PDF | Resumen ejecutivo del ciclo: cobertura, métricas, defectos y recomendaciones |
 
 ---
 
